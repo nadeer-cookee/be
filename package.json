@@ -1,0 +1,27 @@
+{
+  "name": "slot-booking-app-api",
+  "version": "1.0.0",
+  "description": "slot booking app api",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon index.js",
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Nadeer",
+  "license": "ISC",
+  "dependencies": {
+    "bull": "^4.16.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "mongoose": "^8.5.2",
+    "mongoose-paginate-v2": "^1.8.3",
+    "redis": "^4.7.0",
+    "socket.io": "^4.7.5",
+    "winston": "^3.13.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
