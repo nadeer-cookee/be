@@ -48,10 +48,13 @@ const apiLimiter = rateLimit({
 app.use("/api/", apiLimiter);
 
 // MongoDB connection
-mongoose.connect("mongodb://localhost:27017/slot-booking", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+mongoose.connect(
+  "mongodb+srv://nadeer:nadeer@cluster0.j1ivn.mongodb.net/slot-booking",
+  {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  }
+);
 
 // Schemas
 const SlotSchema = new mongoose.Schema({
@@ -140,6 +143,9 @@ app.post("/api/book", async (req, res) => {
       throw new Error("Slot already booked");
     }
 
+    // Emit an event to all clients that a booking attempt is being made
+    io.emit("bookingAttempt", { slotId, userEmail });
+
     // Add job to queue instead of processing immediately
     const job = await bookingQueue.add(
       {
@@ -169,14 +175,21 @@ app.post("/api/book", async (req, res) => {
 bookingQueue.process(async (job) => {
   const { slotId, userEmail } = job.data;
 
-  // Simulate progress
-  await job.progress(25);
-
   try {
+    // Emit event: Booking process started
+    io.emit("bookingProcessStarted", { slotId, userEmail });
+    await job.progress(25);
+
     const result = await bookSlot(slotId, userEmail);
+
+    // Emit event: Booking successful
+    io.emit("bookingSuccessful", { slotId, userEmail });
     await job.progress(100);
+
     return result;
   } catch (error) {
+    // Emit event: Booking failed
+    io.emit("bookingFailed", { slotId, userEmail, error: error.message });
     throw new Error(`Booking failed: ${error.message}`);
   }
 });
@@ -184,7 +197,8 @@ bookingQueue.process(async (job) => {
 // Error handler
 bookingQueue.on("failed", (job, err) => {
   console.error(`Job ${job.id} failed with error ${err.message}`);
-  // Here you might want to notify the user that their booking failed
+  // Emit event: Booking job failed
+  io.emit("bookingJobFailed", { jobId: job.id, error: err.message });
 });
 
 // API endpoint to check job status
